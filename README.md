@@ -26,17 +26,17 @@ look at your real Garmin data to answer — your runs, sleep, heart rate,
 recovery, weight, and (if you want) your menstrual cycle. It can also
 create and schedule real workouts on your Garmin calendar for you.
 
-There are three ways to actually use it, from simplest to most
-hands-off — pick whichever fits you (details for each are further down):
+There are three ways to actually use it — pick whichever fits you
+(details for each are further down):
 
-1. **Just ask Claude** — no setup beyond connecting your account. Open
-   Claude whenever you want a plan and ask for one.
-2. **Run one command whenever you want** — a script does the whole
+1. **Run one command whenever you want** — a script does the whole
    "check my data → plan next week → schedule it → email me" sequence in
    one go, on demand.
-3. **Fully automatic, on a schedule** — the same script runs by itself
+2. **Fully automatic, on a schedule** — the same script runs by itself
    every week, either on your own computer or on a small cloud server you
    set up, so you never have to ask.
+3. **Just ask Claude** — the simplest option, no setup beyond connecting
+   your account. Open Claude whenever you want a plan and ask for one.
 
 ---
 
@@ -94,7 +94,7 @@ any text editor (TextEdit is fine), and put this inside it:
 Save the file, then completely quit and reopen Claude Desktop (not just
 close the window — actually quit it).
 
-**If you use Claude Code** (needed for Options B and C below), run this
+**If you use Claude Code** (needed for Options A and B below), run this
 instead, from inside this folder:
 
 ```sh
@@ -139,29 +139,11 @@ All three options below need Steps 1–4 done first. Pick one.
 
 ---
 
-#### Option A — Just ask Claude (simplest, nothing else to set up)
-
-No script, no scheduling — just talk to Claude (Desktop or Code)
-whenever you want a plan:
-
-> "Look at my Garmin data and tell me how my training went this week"
-
-or
-
-> "Build me a plan for next week based on profile/athlete.md,
-> profile/schedule.md, and profile/training-rules.md"
-
-If it can read your real data and the plan makes sense, you're already
-done — this is all most people need. The two options below are for
-people who'd rather not have to ask.
-
----
-
-#### Option B — Run one command whenever you want a plan
+#### Option A — Run one command whenever you want a plan
 
 This needs **Claude Code** (not Desktop) with the `garmin` connection
 from Step 3. It runs the exact same "check my data → plan next week →
-schedule it → email me" sequence as the automatic option, just on
+schedule it → email me" sequence as the automatic option below, just on
 demand instead of on a timer:
 
 ```sh
@@ -178,9 +160,9 @@ what it created.
 
 ---
 
-#### Option C — Fully automatic, on a schedule
+#### Option B — Fully automatic, on a schedule
 
-The same script as Option B, but run by a scheduler so it happens
+The same script as Option A, but run by a scheduler so it happens
 without you doing anything. Pick where it runs:
 
 **On your own Mac** — simplest, but it only runs while your Mac is on
@@ -251,6 +233,24 @@ private** below for what that means.
 
 ---
 
+#### Option C — Just ask Claude (simplest, nothing else to set up)
+
+No script, no scheduling — just talk to Claude (Desktop or Code)
+whenever you want a plan:
+
+> "Look at my Garmin data and tell me how my training went this week"
+
+or
+
+> "Build me a plan for next week based on profile/athlete.md,
+> profile/schedule.md, and profile/training-rules.md"
+
+If it can read your real data and the plan makes sense, you're already
+done. This is the lowest-effort option — no script to run, nothing to
+schedule — but it does mean remembering to ask.
+
+---
+
 ## Keeping your information private
 
 - The files in `profile/` are meant to hold your real personal details
@@ -262,7 +262,7 @@ private** below for what that means.
 - Your Garmin sign-in pass from Step 2 lives in a hidden file
   (`~/.garminconnect`) on whichever machine you ran that step on, and is
   never uploaded anywhere by this project.
-- If you use the cloud-server version of Option C, that pass now lives on
+- If you use the cloud-server version of Option B, that pass now lives on
   a machine you're renting instead of your own laptop — make sure that
   server itself is reasonably secured (a strong password/SSH key, kept
   up to date) since it's holding a live connection to your Garmin
@@ -272,7 +272,7 @@ private** below for what that means.
 
 - **Claude says it can't find a Garmin tool it needs:** the Garmin
   connector occasionally adds or renames its tools. If you're using
-  Option B or C and it mentions a missing/blocked tool, open
+  Option A or B and it mentions a missing/blocked tool, open
   `scripts/weekly_plan.sh` and add the tool name it mentions to the long
   list near the top of the file.
 - **A workout doesn't show up on your calendar as expected:** just ask
