@@ -1,65 +1,63 @@
 # Weekly Schedule Template
 
-Edit days/order freely — this is the fixed skeleton Claude builds each week's
-plan around. The example below shows one possible setup (coached swims,
-two Claude-designed running days, two Claude-designed gym days) — replace
-it with whatever your actual week looks like.
+Edit this to match your actual week — this is the skeleton Claude builds
+each week's plan around. There's no "right" amount of detail here: some
+people just want "a couple of easy runs a week," others want every set
+and rep spelled out. Start simple. You can always add more detail later.
+
+## Your week
+
+Replace the example below with your own days/sessions. This is already a
+complete, valid schedule as-is — you don't need gym days, coached
+sessions, or anything extra unless you actually have them.
 
 | Day | Session | Alterable? |
 |---|---|---|
-| TODO | TODO (e.g. "Guided swim (coach-led), ~1km") | No — fixed, Claude doesn't touch |
-| TODO | TODO (e.g. "Strength & conditioning") | Yes — Claude-designed |
-| TODO | TODO (e.g. "Running — intervals/tempo") | Yes — Claude-designed, driven by recent Garmin run data |
-| TODO | TODO | TODO |
-| TODO | TODO | TODO |
-| TODO | TODO (e.g. "Running — long run") | Yes — Claude-designed within a distance/pace band you set below |
-| TODO | Rest / easy recovery | TODO |
+| Monday | Rest | — |
+| Tuesday | Easy run | Yes — Claude-designed |
+| Wednesday | Rest | — |
+| Thursday | Intervals/tempo run | Yes — Claude-designed |
+| Friday | Rest | — |
+| Saturday | Long run | Yes — Claude-designed, within a distance/pace band you set below |
+| Sunday | Rest | — |
 
-## Strength & conditioning (if applicable)
+**Any day can be:**
+- **Fixed** — something Claude shouldn't touch (a class, a coached
+  session, work commitments). Claude will still glance at that day's
+  Garmin data for context, but won't redesign it.
+- **Claude-designed** — Claude plans it fresh each week, based on how
+  your training's actually going.
 
-Delete or rewrite this section if you don't have gym days.
+## Running days
 
-- **Equipment:** TODO (e.g. "full gym access", "bodyweight only")
-- **Timing:** TODO (e.g. "evenings, 60 minutes")
-- **Experience level:** TODO — affects load/complexity Claude programs
-- **Focus:** TODO (e.g. "running form and power — glute/hip strength,
-  plyometrics, single-leg stability, calf/ankle stiffness")
-- **Structure:** TODO — this is where you can be as specific or as loose
-  as you want per day. Two worked examples:
+- **Speed/tempo day (if you have one):** structure driven by your current
+  training phase and how your recent runs actually went — not a fixed
+  template.
+- **Long run day (if you have one):** stays within a distance/pace band
+  you're comfortable with — TODO, set one here (e.g. "5-8km, easy pace"),
+  progressing safely toward your goal in [`athlete.md`](./athlete.md).
 
-  ```
-  ### <Day 1> — fixed structure
-  - Warm-up/mobility: exactly 5 exercises
-  - Strength: exactly 6 exercises
-  - Cool-down: 5 minutes
+If you're not training toward anything structured and just want steady,
+sensible runs, you can delete this section entirely — Claude will fall
+back to general safe-progression judgment.
 
-  ### <Day 2> — flexible, themed
-  - Focus: agility (footwork, change-of-direction, reactive drills)
-  - Volume: not capped — use the full time window, more exercises/sets
-    than <Day 1> if the session calls for it
-  ```
+## Gym/strength day (optional — delete if not relevant)
 
-  The automation prompt (`scripts/weekly_plan_prompt.md`) reads whatever
-  you put here — it does not hardcode exercise counts, so editing this
-  section is enough to change what gets generated and emailed.
+If you want a gym day, describe it here — equipment, how much time you
+have, your experience level, and what you want it focused on. Be as loose
+or as specific as you like:
 
-## Running days (if applicable)
+- **Loose example:** "40 minutes, bodyweight only, general strength,
+  whatever seems useful."
+- **Specific example:** "60 minutes, full gym access. Exactly 5 warm-up
+  exercises, 6 strength exercises, then a 5-minute cool-down."
 
-- **Intervals/tempo day:** structure driven by current training phase
-  (base/build/peak/taper), recent training-readiness signal, **and the
-  actual pace/HR/cadence/GCT data from recent runs** — the run schedule is
-  not a fixed template, it's regenerated from how the prior week's runs
-  actually went.
-- **Long run day:** progressive build toward the goal in
-  [`athlete.md`](./athlete.md), staying within a distance/pace band you're
-  comfortable with (TODO — set one, e.g. "15-20km zone 2"), respecting a
-  safe weekly mileage ramp given current baseline and last week's
-  execution.
+The automation (`scripts/weekly_plan_prompt.md`) follows whatever you
+write here exactly — a loose instruction gets a looser session, a
+specific one gets followed to the letter.
 
 ## Notes
 
-- Any fixed external session (coached swim, boxing class, etc.) should be
-  treated as fixed training load — Claude reads its volume/intensity from
-  Garmin to inform the days it does design, but doesn't design or alter
-  the fixed session itself. Say so explicitly here if that's not what you
-  want.
+- Any day marked "fixed" above (a class, a coached session, etc.) is
+  treated as fixed training load — Claude reads it for context but
+  doesn't redesign it.
