@@ -1,23 +1,21 @@
 # Training Rules & Automation Preferences
 
-Edit any value here to change how the plan is built and delivered. Every
-section below is optional — delete anything that doesn't apply to you.
-The only things most people actually need to set are **Delivery email**
-and **Delivery mode** near the bottom.
+Edit any value here to change how the plan is built and delivered. Most
+sections below are optional — delete what doesn't apply to you. The one
+thing everyone needs to set is **Delivery email** near the bottom.
 
 ## Data sources
 
-Garmin covers most of what Claude needs automatically (activities,
-sleep, HRV, body composition, training readiness). The one thing it
-can't see:
+Garmin covers most of this automatically:
 
-| Data | Source |
-|---|---|
-| Menstrual cycle (only if relevant to you) | Not in Garmin — told directly by Claude via `athlete.md`. Delete this row if not applicable. |
-
-Add a row here only if there's something specific you want Claude to
-weigh that isn't obvious from Garmin data alone (e.g. a specific device
-quirk, or a data source outside Garmin entirely).
+| Data | Source | Tool |
+|---|---|---|
+| Activities (runs, etc.): HR, cadence, power, splits | Garmin Connect | `garmin_mcp` |
+| Sleep, HRV, stress, body battery, training readiness/load | Garmin Connect | `garmin_mcp` |
+| Body composition (weight, muscle mass) | Garmin Connect | `garmin_mcp` |
+| Calorie intake / food log | Garmin Connect | `garmin_mcp` |
+| Menstrual cycle (if relevant to you) | **Not in Garmin** — told directly by you, see `athlete.md`. Delete this row if not applicable. | manual |
+| Running dynamics (GCT, vertical osc/ratio, stride length, power) | TODO — depends on your device; most recent Garmin running watches support this wrist-based, no accessory needed | `garmin_mcp` |
 
 ## Deload week trigger (optional)
 
