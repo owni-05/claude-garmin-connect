@@ -16,7 +16,10 @@ text files with your own details.
 - A Mac
 - A Garmin Connect account (the app/account your Garmin watch syncs to)
 - [Claude Desktop](https://claude.ai/download) or Claude Code installed
-- About 15–20 minutes
+- About 15–20 minutes for the basic setup (Steps 1–6 below). If you go on
+  to set up the optional cloud-server automation, budget extra time and
+  some comfort with renting/managing a server — it's a bigger step up in
+  difficulty than everything else here.
 
 ## What you get
 
@@ -45,9 +48,26 @@ There are three ways to actually use it — pick whichever fits you
 Every step below involves opening **Terminal** and pasting in a command,
 then pressing Enter. That's all "running a command" means.
 
-### Step 1 — Install a small helper tool
+### Step 1 — Get this project onto your computer
 
-Copy this, paste it into Terminal, press Enter:
+Everything below refers to files inside this project (like
+`profile/athlete.md`), so you need a copy of it on your computer first.
+
+Easiest way, no coding involved:
+
+1. On the GitHub page for this project, click the green **Code** button,
+   then **Download ZIP**.
+2. Find the downloaded ZIP file (usually in your Downloads folder) and
+   double-click it to unzip it.
+3. Move the unzipped folder somewhere you'll remember — your Desktop or
+   Documents folder is fine.
+
+That folder is "this project" for every instruction below. If you're
+comfortable with `git`, cloning the repo works just as well.
+
+### Step 2 — Install a small helper tool
+
+Open Terminal, copy this, paste it in, press Enter:
 
 ```sh
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -58,7 +78,12 @@ This installs a tool called `uv`, which is just what lets your computer
 download and run the program that talks to Garmin. You won't interact
 with it directly again.
 
-### Step 2 — Connect your Garmin account (one time)
+> If a later step says something like `command not found: uv`, it
+> usually just means you opened a *new* Terminal window after installing
+> it. Run `source $HOME/.local/bin/env` again in that window and it'll
+> work.
+
+### Step 3 — Connect your Garmin account (one time)
 
 ```sh
 uvx --python 3.12 --from git+https://github.com/Taxuspt/garmin_mcp garmin-mcp-auth
@@ -66,36 +91,76 @@ uvx --python 3.12 --from git+https://github.com/Taxuspt/garmin_mcp garmin-mcp-au
 
 This will ask for your Garmin email, password, and the code from your
 phone if you have two-factor login turned on — just like logging into
-the Garmin app. Your password is **not** saved anywhere; instead this
-creates a secure pass (it lasts about 6 months) that lives only on your
-own computer. When it eventually expires, just run this command again.
+the Garmin app. You'll know it worked when it prints something like
+`Login successful` / `Token saved` near the end. Your password is **not**
+saved anywhere; instead this creates a secure pass (it lasts about 6
+months) that lives only on your own computer. When it eventually
+expires, just run this command again.
 
-### Step 3 — Tell Claude how to reach Garmin
+### Step 4 — Tell Claude how to reach Garmin
 
 **If you use Claude Desktop:** open this file on your computer —
 `~/Library/Application Support/Claude/claude_desktop_config.json` — with
-any text editor (TextEdit is fine), and put this inside it:
+any text editor (TextEdit is fine).
 
-```json
-{
-  "mcpServers": {
-    "garmin": {
-      "command": "uvx",
-      "args": [
-        "--python", "3.12",
-        "--from", "git+https://github.com/Taxuspt/garmin_mcp",
-        "garmin-mcp"
-      ]
+- **If the file is empty or doesn't exist yet:** put this inside it:
+
+  ```json
+  {
+    "mcpServers": {
+      "garmin": {
+        "command": "uvx",
+        "args": [
+          "--python", "3.12",
+          "--from", "git+https://github.com/Taxuspt/garmin_mcp",
+          "garmin-mcp"
+        ]
+      }
     }
   }
-}
-```
+  ```
+
+- **If the file already has content in it** (for example you've
+  connected other tools to Claude before), don't replace it — you'd lose
+  those. Instead, add a `"garmin": { ... }` entry alongside whatever's
+  already inside `"mcpServers": { ... }`. For example, if it currently
+  looks like this:
+
+  ```json
+  {
+    "mcpServers": {
+      "some-other-tool": { "command": "..." }
+    }
+  }
+  ```
+
+  add a comma after that entry and put the `"garmin"` block right after
+  it, so it becomes:
+
+  ```json
+  {
+    "mcpServers": {
+      "some-other-tool": { "command": "..." },
+      "garmin": {
+        "command": "uvx",
+        "args": [
+          "--python", "3.12",
+          "--from", "git+https://github.com/Taxuspt/garmin_mcp",
+          "garmin-mcp"
+        ]
+      }
+    }
+  }
+  ```
+
+  If you're not sure your edit is valid, paste the whole file into
+  Claude and ask it to check the JSON is well-formed before you save.
 
 Save the file, then completely quit and reopen Claude Desktop (not just
 close the window — actually quit it).
 
 **If you use Claude Code** (needed for Options A and B below), run this
-instead, from inside this folder:
+instead, from inside this project's folder in Terminal:
 
 ```sh
 claude mcp add garmin --scope local -- uvx --python 3.12 --from git+https://github.com/Taxuspt/garmin_mcp garmin-mcp
@@ -114,7 +179,7 @@ see below) sends through Gmail. Check `claude mcp list` for a Gmail
 connection too — if you don't see one, connect Gmail however your version
 of Claude offers to connect apps/tools.
 
-### Step 4 — Tell Claude about yourself
+### Step 5 — Tell Claude about yourself
 
 This is the part that makes the plan actually *yours*. Inside the
 `profile` folder are three plain text files — open them with any text
@@ -133,16 +198,16 @@ Each file has spots marked `TODO` — replace those with your real
 information. Everything else is just an example to show you the format;
 feel free to change it however you like, it's your file.
 
-### Step 5 — Choose how you want to run it
+### Step 6 — Choose how you want to run it
 
-All three options below need Steps 1–4 done first. Pick one.
+All three options below need Steps 1–5 done first. Pick one.
 
 ---
 
 #### Option A — Run one command whenever you want a plan
 
 This needs **Claude Code** (not Desktop) with the `garmin` connection
-from Step 3. It runs the exact same "check my data → plan next week →
+from Step 4. It runs the exact same "check my data → plan next week →
 schedule it → email me" sequence as the automatic option below, just on
 demand instead of on a timer:
 
@@ -180,7 +245,10 @@ laptop is asleep on Sunday morning).
    (`~/Library/LaunchAgents/com.me.garmin-weekly-plan.plist`) in a text
    editor and replace:
    - `/path/to/claude-garmin-connect` → the real folder path of this
-     project on your computer
+     project on your computer. Not sure what that is? In Terminal, `cd`
+     into the project folder (type `cd ` with a trailing space, then drag
+     the folder from Finder into the Terminal window, then press Enter),
+     then run `pwd` — it'll print the exact path to use.
    - `/path/to/log/dir` → wherever you'd like a record of each run saved
      (e.g. `/Users/yourname/Library/Logs`)
 
@@ -202,15 +270,22 @@ laptop is asleep on Sunday morning).
    ```
 
 **On a cloud server you control** — runs even when your laptop is off.
+
+> This path is genuinely more advanced than everything else in this
+> README — it means renting and managing your own small server. If
+> phrases like "SSH into a server" aren't familiar, skip this and use
+> "On your own Mac" above, or Option C below — both work great without
+> any of this.
+
 There's no special "cloud scheduling" product involved here — you're just
 setting this whole project up a second time on a small always-on Linux
 server you rent (a $5-6/month VPS from any provider is plenty), the same
 way you set it up on your Mac:
 
-1. On that server, repeat Steps 1–4 above: install `uv`, run the Garmin
-   auth command (Step 2 — you'll need to do the email/password/MFA login
+1. On that server, repeat Steps 2–5 above: install `uv`, run the Garmin
+   auth command (Step 3 — you'll need to do the email/password/MFA login
    again, this time from the server), install Claude Code and connect the
-   `garmin` MCP server (Step 3), and get your filled-in `profile/` files
+   `garmin` MCP server (Step 4), and get your filled-in `profile/` files
    onto the server (e.g. `git clone` this repo there, then edit
    `profile/*.md` directly on the server — don't push your filled-in
    versions back to GitHub).
@@ -259,7 +334,7 @@ schedule — but it does mean remembering to ask.
   them to a public GitHub repository). If you're using this project from
   a public copy on GitHub, keep your own edits local and never `commit`/
   `push` them.
-- Your Garmin sign-in pass from Step 2 lives in a hidden file
+- Your Garmin sign-in pass from Step 3 lives in a hidden file
   (`~/.garminconnect`) on whichever machine you ran that step on, and is
   never uploaded anywhere by this project.
 - If you use the cloud-server version of Option B, that pass now lives on
@@ -270,6 +345,10 @@ schedule — but it does mean remembering to ask.
 
 ## If something isn't working
 
+- **Terminal says `command not found`:** almost always means you opened
+  a new Terminal window after installing something (like `uv`) in an
+  older one. Close the window, open a fresh Terminal, and try the step
+  again — or run `source $HOME/.local/bin/env` first.
 - **Claude says it can't find a Garmin tool it needs:** the Garmin
   connector occasionally adds or renames its tools. If you're using
   Option A or B and it mentions a missing/blocked tool, open
