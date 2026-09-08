@@ -1,80 +1,71 @@
 # claude-garmin-connect
 
-Connect Garmin Connect to Claude, so Claude can read your training/health
-data (activities, sleep, HRV, body composition, nutrition, menstrual
-cycle, training readiness) and design + schedule your own workouts on
-your Garmin calendar — then, optionally, generate and email you a new
-training plan automatically every week, driven entirely by your actual
-recorded runs and the coaching rules you write in plain markdown.
+This lets Claude read your Garmin data — your runs, sleep, heart rate,
+and more — and use it to build you a personal training plan. It can even
+put new workouts straight onto your Garmin calendar and email you a plan
+every week, automatically.
 
-This doesn't vendor any code — it wires up
-[garmin_mcp](https://github.com/Taxuspt/garmin_mcp) (Taxuspt), an existing
-MCP server covering most of the `python-garminconnect` library (100+
-tools), via [`uv`](https://github.com/astral-sh/uv)/`uvx`. The actual
-coaching logic lives entirely in the markdown files under `profile/` and
-in `scripts/weekly_plan_prompt.md` — you edit plain English to change how
-Claude plans your training, not code.
+You don't need to know how to code to set this up. You'll just be
+copying and pasting a few commands into a window called the **Terminal**
+(it comes built into your Mac — search for "Terminal" with Spotlight,
+the magnifying glass in your menu bar), and editing a couple of plain
+text files with your own details.
 
-## What this gives Claude
+## What you'll need
 
-- **Activities** — list/inspect runs, swims, etc.: splits, HR zones, weather,
-  gear, power, running dynamics.
-- **Health & wellness** — sleep, HRV, stress, respiration, body battery,
-  training readiness/status/load trend.
-- **Body composition** — weight, muscle mass, body fat (read + log).
-- **Nutrition** — food/calorie logging (read + log).
-- **Women's health** — menstrual cycle calendar data (optional).
-- **Workouts** — create runs/intervals/strength sessions, schedule a full
-  week at once, edit/delete/unschedule.
+- A Mac
+- A Garmin Connect account (the app/account your Garmin watch syncs to)
+- [Claude Desktop](https://claude.ai/download) or Claude Code installed
+- About 15–20 minutes
 
-## How it fits together
+## What you get
 
-```
-profile/athlete.md          <- who you are, your goal, your constraints
-profile/schedule.md         <- your fixed weekly skeleton (what's fixed,
-                                what Claude designs, and how)
-profile/training-rules.md   <- data sources, deload logic, delivery prefs
-scripts/weekly_plan_prompt.md <- the instructions the automation follows,
-                                  reading all three files above at runtime
-scripts/weekly_plan.sh      <- runs the prompt headlessly via Claude Code
-scripts/*.plist.template    <- macOS launchd job to run it every Sunday
-```
+Once it's set up, you can ask Claude things like *"how was my training
+this week?"* or *"plan my workouts for next week"*, and it will actually
+look at your real Garmin data to answer — your runs, sleep, heart rate,
+recovery, weight, and (if you want) your menstrual cycle. It can also
+create and schedule real workouts on your Garmin calendar for you.
 
-Nothing here hardcodes your race date, your body stats, your schedule, or
-your email — all of that lives in `profile/` as plain markdown you edit
-directly. Change your mind about your deload logic, your gym structure,
-or how many exercises you want on a given day? Edit the file, no code
-changes needed.
+There's also an optional feature (further down) that does this
+automatically every week and emails you the plan, with no need to ask.
 
 ---
 
 ## Setup
 
-### 1. Install `uv`
+Every step below involves opening **Terminal** and pasting in a command,
+then pressing Enter. That's all "running a command" means.
+
+### Step 1 — Install a small helper tool
+
+Copy this, paste it into Terminal, press Enter:
 
 ```sh
 curl -LsSf https://astral.sh/uv/install.sh | sh
 source $HOME/.local/bin/env
 ```
 
-### 2. Authenticate with Garmin (one-time)
+This installs a tool called `uv`, which is just what lets your computer
+download and run the program that talks to Garmin. You won't interact
+with it directly again.
 
-Run this yourself in a terminal — it prompts for your Garmin email,
-password, and MFA code interactively:
+### Step 2 — Connect your Garmin account (one time)
 
 ```sh
 uvx --python 3.12 --from git+https://github.com/Taxuspt/garmin_mcp garmin-mcp-auth
 ```
 
-This saves a long-lived OAuth token to `~/.garminconnect` (valid ~6
-months, on your machine only). No password is stored, and the MCP server
-never needs your credentials again after this step. Re-run this command
-whenever the token expires.
+This will ask for your Garmin email, password, and the code from your
+phone if you have two-factor login turned on — just like logging into
+the Garmin app. Your password is **not** saved anywhere; instead this
+creates a secure pass (it lasts about 6 months) that lives only on your
+own computer. When it eventually expires, just run this command again.
 
-### 3. Add the MCP server
+### Step 3 — Tell Claude how to reach Garmin
 
-**For Claude Desktop** — add this to
-`~/Library/Application Support/Claude/claude_desktop_config.json`:
+**If you use Claude Desktop:** open this file on your computer —
+`~/Library/Application Support/Claude/claude_desktop_config.json` — with
+any text editor (TextEdit is fine), and put this inside it:
 
 ```json
 {
@@ -91,139 +82,156 @@ whenever the token expires.
 }
 ```
 
-Then fully restart Claude Desktop (quit and reopen, not just close the
-window).
+Save the file, then completely quit and reopen Claude Desktop (not just
+close the window — actually quit it).
 
-**For Claude Code** (needed if you want the weekly automation below) —
-from this repo's directory:
+**If you use Claude Code** (needed for the automatic weekly email
+further down), run this instead, from inside this folder:
 
 ```sh
 claude mcp add garmin --scope local -- uvx --python 3.12 --from git+https://github.com/Taxuspt/garmin_mcp garmin-mcp
 ```
 
-Verify it connected:
+To check it worked:
 
 ```sh
 claude mcp list
 ```
 
-You should see `garmin: ... ✔ Connected`.
+You should see a line that says `garmin: ... ✔ Connected`.
 
-**Gmail** (needed for the weekly email) — this repo assumes you already
-have a Gmail MCP connector available to Claude (e.g. the built-in
-`claude.ai Gmail` connector). Check `claude mcp list` for it; if it's
-missing, connect it through however your Claude client exposes first-party
-connectors.
+**One more connection, for email:** the weekly-email feature (optional,
+see below) sends through Gmail. Check `claude mcp list` for a Gmail
+connection too — if you don't see one, connect Gmail however your version
+of Claude offers to connect apps/tools.
 
-### 4. Fill in your profile
+### Step 4 — Tell Claude about yourself
 
-Edit these three files directly — every `TODO` should get replaced with
-your actual information:
+This is the part that makes the plan actually *yours*. Inside the
+`profile` folder are three plain text files — open them with any text
+editor, no coding involved:
 
-- [`profile/athlete.md`](./profile/athlete.md) — goal, race date(s),
-  baseline, body stats, injuries, cycle info (delete the cycle section if
-  not applicable to you)
-- [`profile/schedule.md`](./profile/schedule.md) — your actual weekly
-  skeleton: which days are fixed (coached swim, a class, etc.) vs.
-  Claude-designed (running, gym), and exactly how specific you want to be
-  about structure (see the worked examples in the file)
-- [`profile/training-rules.md`](./profile/training-rules.md) — data
-  sources, your deload-week logic, your delivery email and whether you
-  want a draft or auto-sent email
+- **`profile/athlete.md`** — your goal (e.g. a race and date), your
+  current fitness, body stats, any injuries, and (optional) your cycle
+  info
+- **`profile/schedule.md`** — your weekly routine: which days are fixed
+  (like a class you already go to) and which days you want Claude to plan
+  for you
+- **`profile/training-rules.md`** — your email address for the weekly
+  plan, and a few preferences about how cautious the plan should be
 
-### 5. Test it manually first
+Each file has spots marked `TODO` — replace those with your real
+information. Everything else is just an example to show you the format;
+feel free to change it however you like, it's your file.
 
-Before setting up automation, just talk to Claude (Desktop or Code, with
-the `garmin` MCP connected) and ask it to review your week or build a
-plan, referencing the files in `profile/`. Confirm it can actually read
-your Garmin data and that the plan it proposes makes sense.
+### Step 5 — Try it out
 
-You can also dry-run the exact automation prompt without waiting for
-Sunday:
+Before setting up anything automatic, just open Claude and ask it
+something like:
 
-```sh
-bash scripts/weekly_plan.sh
-```
+> "Look at my Garmin data and tell me how my training went this week"
 
-Check the log it writes to `~/Library/Logs/claude-garmin-connect/` and
-your inbox (or Gmail drafts, depending on your `training-rules.md`
-delivery mode).
+or
 
-> **Careful:** each run of this script can create real workouts on your
-> Garmin calendar and send/draft a real email. Don't run it repeatedly
-> without checking what it scheduled first — duplicate test runs will
-> leave duplicate calendar entries. If you do end up with duplicates, ask
-> Claude to check `get_scheduled_workouts` for the affected date range and
-> clean up with `unschedule_workouts` + `delete_workouts`.
+> "Build me a plan for next week based on profile/athlete.md,
+> profile/schedule.md, and profile/training-rules.md"
 
-### 6. Set up the weekly automation (optional)
-
-The automation runs **locally**, not in the cloud — the Garmin OAuth
-token in `~/.garminconnect` is local-only, so a cloud-scheduled agent
-can't reach it. This uses macOS `launchd` to run headless Claude Code on
-your own machine.
-
-1. Copy the plist template and fill in your real paths:
-
-   ```sh
-   cp scripts/com.example.garmin-weekly-plan.plist.template \
-      ~/Library/LaunchAgents/com.<you>.garmin-weekly-plan.plist
-   ```
-
-   Edit the copy:
-   - `Label` — match the filename, e.g. `com.<you>.garmin-weekly-plan`
-   - `ProgramArguments` — replace `/path/to/claude-garmin-connect` with
-     this repo's actual absolute path on your machine
-   - `StandardOutPath` / `StandardErrorPath` — replace `/path/to/log/dir`
-     with wherever you want logs (e.g. `~/Library/Logs`)
-   - `StartCalendarInterval` — defaults to Sunday 8am (`Weekday: 0`,
-     `Hour: 8`); change `Weekday` (0=Sunday .. 6=Saturday) or `Hour`/
-     `Minute` to taste
-
-2. Load it:
-
-   ```sh
-   launchctl load ~/Library/LaunchAgents/com.<you>.garmin-weekly-plan.plist
-   launchctl list | grep garmin-weekly-plan
-   ```
-
-   A `0` exit status with no error means it's registered — it will next
-   fire at the scheduled time, not immediately (unless you set
-   `RunAtLoad` to `true`).
-
-3. **This only runs while your Mac is on and you're logged in** at the
-   scheduled time — `launchd` user agents don't run on a powered-off or
-   logged-out machine.
-
-To stop it: `launchctl unload ~/Library/LaunchAgents/com.<you>.garmin-weekly-plan.plist`.
+If it can read your real data and the plan makes sense, you're good to
+go. If you skip the automatic part below, this is all you need — you can
+just ask Claude for a plan whenever you want one.
 
 ---
 
-## Privacy
+## Optional: get a plan emailed to you automatically every week
 
-- **Never commit your filled-in `profile/` files, your token, or any
-  personal training data if you fork or push changes to a public repo.**
-  This repo ships `profile/*.md` as generic templates full of `TODO`s —
-  keep it that way in git; fill in your real details locally and leave
-  those edits uncommitted (or keep your fork private).
-- The Garmin OAuth token lives at `~/.garminconnect`, outside this repo,
-  and is never read by anything except the `garmin_mcp` server on your
-  own machine.
-- The weekly automation logs to `~/Library/Logs/claude-garmin-connect/`
-  by default (outside the repo) — those logs will contain your real
-  training data, so don't commit that directory either.
+This part is more technical and is only needed if you want it to happen
+**without you asking** — every Sunday, Claude checks your Garmin data,
+schedules next week's workouts, and emails you the plan on its own. If
+that's not important to you, skip this whole section — everything above
+already works fine on its own, just by asking.
 
-## Troubleshooting
+This runs on your own computer (not "in the cloud"), because the secure
+pass from Step 2 only exists on your machine. That also means it only
+works while your Mac is turned on and you're logged in at the scheduled
+time.
 
-- **A tool call gets blocked/gated that isn't in `scripts/weekly_plan.sh`'s
-  `ALLOWED_TOOLS` list:** `garmin_mcp` occasionally adds/renames tools.
-  Add the missing `mcp__garmin__<tool_name>` to the list and re-run.
-- **`create_run_workout` or similar seems to silently no-op:** double
-  check the exact tool names your connected server exposes (`claude mcp
-  list`, or inspect the server's source) — names can drift from what any
-  docs say.
-- **Duplicate calendar entries:** see the warning in step 5 above.
+1. First, try it manually once to make sure it works:
+
+   ```sh
+   bash scripts/weekly_plan.sh
+   ```
+
+   This does exactly what the automatic weekly version will do. Give it a
+   minute or two, then check your email and your Garmin calendar to see
+   what it created.
+
+   > ⚠️ **Heads up:** this creates real workouts on your calendar and
+   > sends/drafts a real email each time you run it. Don't run it several
+   > times in a row just to test — you'll end up with duplicate workouts
+   > on your calendar that you'd need to clean up.
+
+2. If that looked right, set it to run automatically every Sunday. Copy
+   the template file and fill in a few blanks:
+
+   ```sh
+   cp scripts/com.example.garmin-weekly-plan.plist.template \
+      ~/Library/LaunchAgents/com.me.garmin-weekly-plan.plist
+   ```
+
+   Open the copy you just made (`~/Library/LaunchAgents/com.me.garmin-weekly-plan.plist`)
+   in a text editor and replace:
+   - `/path/to/claude-garmin-connect` → the real folder path of this
+     project on your computer
+   - `/path/to/log/dir` → wherever you'd like a record of each run saved
+     (e.g. `/Users/yourname/Library/Logs`)
+
+   It's already set to run every Sunday at 8am — to change that, edit the
+   `Hour`/`Minute` numbers, or the `Weekday` number (0 = Sunday, 1 =
+   Monday, ... 6 = Saturday).
+
+3. Turn it on:
+
+   ```sh
+   launchctl load ~/Library/LaunchAgents/com.me.garmin-weekly-plan.plist
+   ```
+
+   No error message means it worked. It'll quietly wait until the
+   scheduled time — it won't run right away.
+
+   To turn it back off later:
+
+   ```sh
+   launchctl unload ~/Library/LaunchAgents/com.me.garmin-weekly-plan.plist
+   ```
+
+---
+
+## Keeping your information private
+
+- The files in `profile/` are meant to hold your real personal details
+  once you fill them in — your body stats, injuries, race goals, etc.
+  **Don't upload your filled-in versions anywhere public** (like posting
+  them to a public GitHub repository). If you're using this project from
+  a public copy on GitHub, keep your own edits local and never `commit`/
+  `push` them.
+- Your Garmin sign-in pass from Step 2 lives in a hidden file on your own
+  computer only (`~/.garminconnect`) — it's never uploaded anywhere.
+
+## If something isn't working
+
+- **Claude says it can't find a Garmin tool it needs:** the Garmin
+  connector occasionally adds or renames its tools. If you're using the
+  automatic weekly email and it mentions a missing/blocked tool, open
+  `scripts/weekly_plan.sh` and add the tool name it mentions to the long
+  list near the top of the file.
+- **A workout doesn't show up on your calendar as expected:** just ask
+  Claude directly — e.g. "check what's on my Garmin calendar this week"
+  — and it can look, and fix it, for you.
+- **You ended up with duplicate workouts from testing:** ask Claude to
+  check your Garmin calendar for the affected days and remove the
+  duplicates.
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+MIT — see [LICENSE](./LICENSE). In plain terms: anyone is free to use,
+copy, and change this.
